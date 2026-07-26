@@ -1,6 +1,7 @@
 import telebot
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from tinydb import TinyDB, Query
 
 # -----------------------------
 # تنظیمات ربات
@@ -9,6 +10,10 @@ BOT_TOKEN = "8981068430:AAGOnvNo3656H8E48dUFFgWRQe2rdFDB_48"
 CHANNEL_ID = -1004386489690   # آیدی کانال BANIA
 
 bot = telebot.TeleBot(BOT_TOKEN)
+
+# دیتابیس
+db = TinyDB("database.json")
+Users = Query()
 
 # -----------------------------
 # سرور فیک برای Render (اجباری)
@@ -36,12 +41,48 @@ def is_member(user_id):
         return False
 
 # -----------------------------
+# ساخت لینک اختصاصی
+# -----------------------------
+def get_ref_link(user_id):
+    return f"https://t.me/BANIAJoinBot?start={user_id}"
+
+# -----------------------------
+# هندلر استارت
+# -----------------------------
+@bot.message_handler(commands=['start'])
+def start(message):
+    user_id = message.from_user.id
+
+    # اگر کاربر از لینک دعوت وارد شده
+    args = message.text.split()
+    if len(args) > 1:
+        ref = args[1]
+        if ref != str(user_id):  # خودش خودش را دعوت نکند
+            inviter = int(ref)
+            record = db.get(Users.user_id == inviter)
+
+            if record:
+                db.update({"invites": record["invites"] + 1}, Users.user_id == inviter)
+            else:
+                db.insert({"user_id": inviter, "invites": 1})
+
+    # ثبت کاربر اگر وجود ندارد
+    if not db.get(Users.user_id == user_id):
+        db.insert({"user_id": user_id, "invites": 0})
+
+    bot.reply_to(message,
+        "سلام! برای ورود به کانال BANIA باید ۳ نفر را دعوت کنی.\n\n"
+        f"لینک اختصاصی تو:\n{get_ref_link(user_id)}"
+    )
+
+# -----------------------------
 # هندلر پیام‌ها
 # -----------------------------
 @bot.message_handler(func=lambda m: True)
 def handle_all(message):
     user_id = message.from_user.id
 
+    # اگر عضو کانال نیست
     if not is_member(user_id):
         bot.reply_to(message,
             "برای استفاده از ربات باید عضو کانال BANIA باشی.\n\n"
@@ -49,7 +90,23 @@ def handle_all(message):
         )
         return
 
-    bot.reply_to(message, "عضویتت تایید شد ✔️")
+    # چک تعداد دعوت‌ها
+    record = db.get(Users.user_id == user_id)
+    invites = record["invites"]
+
+    if invites < 3:
+        bot.reply_to(message,
+            f"تو تا الان {invites} نفر دعوت کردی.\n"
+            "برای ورود به کانال باید ۳ نفر را دعوت کنی.\n\n"
+            f"لینک اختصاصی تو:\n{get_ref_link(user_id)}"
+        )
+        return
+
+    # اگر ۳ نفر دعوت کرده
+    bot.reply_to(message,
+        "دعوت‌ها کامل شد! 🎉\n"
+        "لینک ورود به کانال:\nhttps://t.me/+something"
+    )
 
 # -----------------------------
 # اجرای ربات
