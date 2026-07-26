@@ -1,3 +1,4 @@
+
 import telebot
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -8,6 +9,7 @@ from tinydb import TinyDB, Query
 # -----------------------------
 BOT_TOKEN = "8981068430:AAGOnvNo3656H8E48dUFFgWRQe2rdFDB_48"
 CHANNEL_ID = -1004386489690   # آیدی کانال BANIA
+BOT_USERNAME = "BANIA_JoinBot"  # یوزرنیم واقعی ربات
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -44,7 +46,7 @@ def is_member(user_id):
 # ساخت لینک اختصاصی
 # -----------------------------
 def get_ref_link(user_id):
-    return f"https://t.me/BANIAJoinBot?start={user_id}"
+    return f"https://t.me/{BOT_USERNAME}?start={user_id}"
 
 # -----------------------------
 # هندلر استارت
