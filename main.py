@@ -3,22 +3,16 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from tinydb import TinyDB, Query
 
-# -----------------------------
-# تنظیمات ربات
-# -----------------------------
 BOT_TOKEN = "8981068430:AAGOnvNo3656H8E48dUFFgWRQe2rdFDB_48"
 CHANNEL_ID = -1004386489690
 BOT_USERNAME = "BANIA_JoinBot"
+OWNER_ID = 305765061
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# دیتابیس
 db = TinyDB("database.json")
 Users = Query()
 
-# -----------------------------
-# سرور فیک برای Railway
-# -----------------------------
 class FakeHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -31,9 +25,6 @@ def run_fake_server():
 
 threading.Thread(target=run_fake_server).start()
 
-# -----------------------------
-# چک عضویت کاربر در کانال
-# -----------------------------
 def is_member(user_id):
     try:
         member = bot.get_chat_member(CHANNEL_ID, user_id)
@@ -41,15 +32,9 @@ def is_member(user_id):
     except:
         return False
 
-# -----------------------------
-# ساخت لینک اختصاصی
-# -----------------------------
 def get_ref_link(user_id):
     return f"https://t.me/{BOT_USERNAME}?start={user_id}"
 
-# -----------------------------
-# هندلر استارت
-# -----------------------------
 @bot.message_handler(commands=['start'])
 def start(message):
     user_id = message.from_user.id
@@ -60,7 +45,6 @@ def start(message):
         if ref != str(user_id):
             inviter = int(ref)
             record = db.get(Users.user_id == inviter)
-
             if record:
                 db.update({"invites": record["invites"] + 1}, Users.user_id == inviter)
             else:
@@ -75,12 +59,10 @@ def start(message):
     )
 
 # -----------------------------
-# دستور پاکسازی پیام‌های کانال
+# هندلر واقعی و تضمینی /clear
 # -----------------------------
-@bot.message_handler(commands=['clear'])
+@bot.message_handler(func=lambda m: m.text.startswith('/clear'))
 def clear_channel(message):
-    OWNER_ID = 305765061
-
     if message.from_user.id != OWNER_ID:
         bot.reply_to(message, "❌ شما اجازه اجرای این دستور را ندارید.")
         return
@@ -89,7 +71,6 @@ def clear_channel(message):
 
     try:
         messages = bot.get_chat_history(CHANNEL_ID, limit=100)
-
         for msg in messages:
             try:
                 bot.delete_message(CHANNEL_ID, msg.message_id)
@@ -97,14 +78,13 @@ def clear_channel(message):
                 pass
 
         bot.send_message(message.chat.id, "✅ تمام پیام‌های کانال پاک شدند.")
-
     except Exception as e:
         bot.send_message(message.chat.id, f"⚠️ خطا در پاکسازی: {e}")
 
 # -----------------------------
-# هندلر پیام‌های معمولی (غیر از clear)
+# هندلر پیام‌های معمولی
 # -----------------------------
-@bot.message_handler(func=lambda m: not m.text.startswith("/clear"))
+@bot.message_handler(func=lambda m: not m.text.startswith('/clear'))
 def handle_all(message):
     user_id = message.from_user.id
 
@@ -131,7 +111,4 @@ def handle_all(message):
         "لینک ورود به کانال:\nhttps://t.me/+something"
     )
 
-# -----------------------------
-# اجرای ربات
-# -----------------------------
 bot.infinity_polling()
