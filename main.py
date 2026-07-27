@@ -1,4 +1,3 @@
-
 import telebot
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -18,7 +17,7 @@ db = TinyDB("database.json")
 Users = Query()
 
 # -----------------------------
-# سرور فیک برای Render (اجباری)
+# سرور فیک برای Render / Railway
 # -----------------------------
 class FakeHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -78,9 +77,36 @@ def start(message):
     )
 
 # -----------------------------
-# هندلر پیام‌ها
+# دستور پاکسازی پیام‌های کانال
 # -----------------------------
-@bot.message_handler(func=lambda m: True)
+@bot.message_handler(commands=['clear'])
+def clear_channel(message):
+    OWNER_ID = 305765061  # آیدی خودت
+
+    if message.from_user.id != OWNER_ID:
+        bot.reply_to(message, "❌ شما اجازه اجرای این دستور را ندارید.")
+        return
+
+    bot.reply_to(message, "⏳ در حال پاکسازی پیام‌های کانال...")
+
+    try:
+        messages = bot.get_chat_history(CHANNEL_ID, limit=100)
+
+        for msg in messages:
+            try:
+                bot.delete_message(CHANNEL_ID, msg.message_id)
+            except:
+                pass
+
+        bot.send_message(message.chat.id, "✅ تمام پیام‌های کانال پاک شدند.")
+
+    except Exception as e:
+        bot.send_message(message.chat.id, f"⚠️ خطا در پاکسازی: {e}")
+
+# -----------------------------
+# هندلر پیام‌های معمولی (غیر از clear)
+# -----------------------------
+@bot.message_handler(func=lambda m: m.text not in ["/clear"])
 def handle_all(message):
     user_id = message.from_user.id
 
@@ -109,34 +135,6 @@ def handle_all(message):
         "دعوت‌ها کامل شد! 🎉\n"
         "لینک ورود به کانال:\nhttps://t.me/+something"
     )
-
-# -----------------------------
-# دستور پاکسازی پیام‌های کانال
-# -----------------------------
-@bot.message_handler(commands=['clear'])
-def clear_channel(message):
-    OWNER_ID = 305765061
-
-    if message.from_user.id != OWNER_ID:
-        bot.reply_to(message, "❌ شما اجازه اجرای این دستور را ندارید.")
-        return
-
-    bot.reply_to(message, "⏳ در حال پاکسازی پیام‌های کانال...")
-
-    try:
-        messages = bot.get_chat_history(CHANNEL_ID, limit=100)
-
-        for msg in messages:
-            try:
-                bot.delete_message(CHANNEL_ID, msg.message_id)
-            except:
-                pass
-
-        bot.send_message(message.chat.id, "✅ تمام پیام‌های کانال پاک شدند.")
-
-    except Exception as e:
-        bot.send_message(message.chat.id, f"⚠️ خطا در پاکسازی: {e}")
-
 
 # -----------------------------
 # اجرای ربات
