@@ -7,8 +7,8 @@ from tinydb import TinyDB, Query
 # تنظیمات ربات
 # -----------------------------
 BOT_TOKEN = "8981068430:AAGOnvNo3656H8E48dUFFgWRQe2rdFDB_48"
-CHANNEL_ID = -1004386489690   # آیدی کانال BANIA
-BOT_USERNAME = "BANIA_JoinBot"  # یوزرنیم واقعی ربات
+CHANNEL_ID = -1004386489690
+BOT_USERNAME = "BANIA_JoinBot"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -17,7 +17,7 @@ db = TinyDB("database.json")
 Users = Query()
 
 # -----------------------------
-# سرور فیک برای Render / Railway
+# سرور فیک برای Railway
 # -----------------------------
 class FakeHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -54,11 +54,10 @@ def get_ref_link(user_id):
 def start(message):
     user_id = message.from_user.id
 
-    # اگر کاربر از لینک دعوت وارد شده
     args = message.text.split()
     if len(args) > 1:
         ref = args[1]
-        if ref != str(user_id):  # خودش خودش را دعوت نکند
+        if ref != str(user_id):
             inviter = int(ref)
             record = db.get(Users.user_id == inviter)
 
@@ -67,7 +66,6 @@ def start(message):
             else:
                 db.insert({"user_id": inviter, "invites": 1})
 
-    # ثبت کاربر اگر وجود ندارد
     if not db.get(Users.user_id == user_id):
         db.insert({"user_id": user_id, "invites": 0})
 
@@ -81,7 +79,7 @@ def start(message):
 # -----------------------------
 @bot.message_handler(commands=['clear'])
 def clear_channel(message):
-    OWNER_ID = 305765061  # آیدی خودت
+    OWNER_ID = 305765061
 
     if message.from_user.id != OWNER_ID:
         bot.reply_to(message, "❌ شما اجازه اجرای این دستور را ندارید.")
@@ -106,11 +104,10 @@ def clear_channel(message):
 # -----------------------------
 # هندلر پیام‌های معمولی (غیر از clear)
 # -----------------------------
-@bot.message_handler(func=lambda m: m.text not in ["/clear"])
+@bot.message_handler(func=lambda m: not m.text.startswith("/clear"))
 def handle_all(message):
     user_id = message.from_user.id
 
-    # اگر عضو کانال نیست
     if not is_member(user_id):
         bot.reply_to(message,
             "برای استفاده از ربات باید عضو کانال BANIA باشی.\n\n"
@@ -118,7 +115,6 @@ def handle_all(message):
         )
         return
 
-    # چک تعداد دعوت‌ها
     record = db.get(Users.user_id == user_id)
     invites = record["invites"]
 
@@ -130,7 +126,6 @@ def handle_all(message):
         )
         return
 
-    # اگر ۳ نفر دعوت کرده
     bot.reply_to(message,
         "دعوت‌ها کامل شد! 🎉\n"
         "لینک ورود به کانال:\nhttps://t.me/+something"
