@@ -111,6 +111,34 @@ def handle_all(message):
     )
 
 # -----------------------------
+# دستور پاکسازی پیام‌های کانال
+# -----------------------------
+@bot.message_handler(commands=['clear'])
+def clear_channel(message):
+    OWNER_ID = 305765061
+
+    if message.from_user.id != OWNER_ID:
+        bot.reply_to(message, "❌ شما اجازه اجرای این دستور را ندارید.")
+        return
+
+    bot.reply_to(message, "⏳ در حال پاکسازی پیام‌های کانال...")
+
+    try:
+        messages = bot.get_chat_history(CHANNEL_ID, limit=100)
+
+        for msg in messages:
+            try:
+                bot.delete_message(CHANNEL_ID, msg.message_id)
+            except:
+                pass
+
+        bot.send_message(message.chat.id, "✅ تمام پیام‌های کانال پاک شدند.")
+
+    except Exception as e:
+        bot.send_message(message.chat.id, f"⚠️ خطا در پاکسازی: {e}")
+
+
+# -----------------------------
 # اجرای ربات
 # -----------------------------
 bot.infinity_polling()
